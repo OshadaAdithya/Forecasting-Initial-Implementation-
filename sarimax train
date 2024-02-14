@@ -1,0 +1,40 @@
+import pandas as pd
+from pmdarima import auto_arima
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from sklearn.metrics import mean_squared_error
+import numpy as np
+
+# Load the dataset
+df = pd.read_excel('output_merged_data.xlsx')
+
+# Split the data into training and testing sets
+train_size = int(len(df) * 0.8)
+train, test = df[:train_size], df[train_size:]
+
+# Define target variable and exogenous variable
+target_variable = 'Carrot'
+exogenous_feature = train['apparent_temperature_mean']
+
+# SARIMAX model
+sarimax_model = auto_arima(train[target_variable],
+                           exogenous=exogenous_feature,
+                           seasonal=True,
+                           m=7,  # Weekly seasonality
+                           trace=True)
+# Get the best SARIMAX model parameters from auto_arima
+p, d, q = sarimax_model.order
+P, D, Q, s = sarimax_model.seasonal_order
+
+# Train the SARIMAX model
+sarimax_model = SARIMAX(train[target_variable], exog=exogenous_feature,
+                        order=(p, d, q), seasonal_order=(P, D, Q, s))
+sarimax_result = sarimax_model.fit()
+
+# Generate forecasts
+sarimax_forecast = sarimax_result.forecast(steps=len(test), exog=test['apparent_temperature_mean'])
+
+# Calculate SARIMAX metrics
+sarimax_mse = mean_squared_error(test[target_variable], sarimax_forecast)
+sarimax_rmse = np.sqrt(sarimax_mse)
+sarimax_mape = np.mean(np.abs((test[target_variable] - sarimax_forecast) / test[target_variable])) * 100
+
