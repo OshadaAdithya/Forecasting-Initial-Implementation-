@@ -1,0 +1,18 @@
+from sklearn.ensemble import GradientBoostingRegressor
+
+# Train the Gradient Boosting model (XGBoost)
+gbm_model = GradientBoostingRegressor()
+gbm_model.fit(X=train[['apparent_temperature_mean']], y=train[target_variable])
+
+# Generate forecasts
+gbm_forecast = gbm_model.predict(test[['apparent_temperature_mean']])
+
+# Calculate GBM metrics
+gbm_mse = mean_squared_error(test[target_variable], gbm_forecast)
+gbm_rmse = np.sqrt(gbm_mse)
+gbm_mape = np.mean(np.abs((test[target_variable] - gbm_forecast) / test[target_variable])) * 100
+
+print("XGBoost Metrics:")
+print(f"MSE: {gbm_mse:.2f}")
+print(f"RMSE: {gbm_rmse:.2f}")
+print(f"MAPE: {gbm_mape:.2f}%")
